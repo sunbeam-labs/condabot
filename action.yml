@@ -1,0 +1,96 @@
+name: "Update Conda Lockfiles and Create PR"
+description: "Generates conda lockfiles and opens a PR"
+inputs:
+  env-path:
+    description: "Path to the conda env file dir"
+    required: true
+    default: "envs/"
+
+outputs:
+  pr-number:
+    description: "Number of the created pull request"
+    value: ${{ steps.create-pr.outputs.pull-request-number }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for accurate commit information
+
+    - uses: mamba-org/setup-micromamba@v2
+      with:
+        environment-name: lockenv
+        create-args: python=3.11
+        init-shell: bash
+        cache-downloads: true
+
+    - name: Install conda-lock
+      shell: bash -l {0}
+      run: micromamba install -c conda-forge conda-lock --yes
+
+    - name: Generate lockfile
+      shell: bash -l {0}
+      run: |
+        for envfile in $(find ${{ inputs.env-path }} -name '*.yml' -o -name '*.yaml'); do
+          echo "Locking $envfile"
+          # Get the filename without extension using parameter expansion
+          filename=$(basename "$envfile")
+          envname=${filename%.*}
+          outdir=$(dirname "$envfile")
+          outfile="$outdir/${envname}.linux-64.pin.txt"
+          conda-lock lock -f "$envfile" --kind explicit --micromamba --platform linux-64 --filename-template conda-lock-{platform}.txt
+          mv conda-lock-linux-64.txt "$outfile"
+        done
+
+    - name: Commit changes
+      shell: bash
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git checkout -b update/conda-lock || git checkout update/conda-lock
+        git add .
+        git commit -m "Update conda lockfiles [automated]" || echo "Nothing to commit"
+
+    - name: Create PR
+      id: create-pr
+      uses: peter-evans/create-pull-request@v6
+      with:
+        branch: update/conda-lock
+        commit-message: Update conda lockfiles [automated]
+        title: Update Conda lockfiles
+        body: |
+          This PR updates all `conda-lock` files.
+            - Automated weekly by GitHub Actions
+            - A test report will be posted in a comment once the tests run
+            - To trigger test reruns, checkout this branch, make a commit, and push it (`git commit --allow-empty -m "Trigger tests"`)
+        author: GitHub <noreply@github.com>
+        labels: |
+          automated
+          dependencies
+
+    - name: Run tests
+      id: run-tests
+      uses: sunbeam-labs/sbx_test_action@v1
+      
+    - name: Generate test summary
+      shell: bash
+      run: |
+        result="${{ steps.run-tests.outcome }}"
+        if [[ "$result" == "success" ]]; then
+          icon="✅"
+        else
+          icon="❌"
+        fi
+        
+        echo "### ${icon} Test Results for PR #${{ steps.create-pr.outputs.pull-request-number }}" >> comment.md
+        echo "- Workflow: \`tests.yml\`" >> comment.md
+        echo "- Status: ${{ steps.run-tests.result }}" >> comment.md
+        echo "- Run: [View Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> comment.md
+
+    - name: Comment on PR
+      uses: peter-evans/create-or-update-comment@v4
+      with:
+        issue-number: ${{ steps.create-pr.outputs.pull-request-number }}
+        body-file: comment.md
