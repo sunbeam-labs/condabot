@@ -39,15 +39,6 @@ runs:
           mv conda-lock-linux-64.txt "$outfile"
         done
 
-    - name: Commit changes
-      shell: bash
-      run: |
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-        git checkout -b update/conda-lock || git checkout update/conda-lock
-        git add .
-        git commit -m "Update conda lockfiles [automated]" || echo "Nothing to commit"
-
     - name: Create PR
       id: create-pr
       uses: peter-evans/create-pull-request@v6
