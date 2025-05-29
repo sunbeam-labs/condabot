@@ -1,5 +1,9 @@
 name: "Update Conda Lockfiles and Create PR"
 description: "Generates conda lockfiles and opens a PR"
+branding:
+  icon: "arrow-up-circle"
+  color: "green"
+
 inputs:
   env-path:
     description: "Path to the conda env file dir"
