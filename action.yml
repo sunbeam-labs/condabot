@@ -59,8 +59,10 @@ runs:
     - name: Run tests
       id: run-tests
       uses: sunbeam-labs/sbx_test_action@v1
+      continue-on-error: true
       
     - name: Generate test summary
+      if: always()
       shell: bash
       run: |
         result="${{ steps.run-tests.outcome }}"
@@ -76,6 +78,7 @@ runs:
         echo "- Run: [View Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> comment.md
 
     - name: Comment on PR
+      if: always()
       uses: peter-evans/create-or-update-comment@v4
       with:
         issue-number: ${{ steps.create-pr.outputs.pull-request-number }}
