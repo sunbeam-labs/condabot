@@ -41,7 +41,7 @@ runs:
 
     - name: Create PR
       id: create-pr
-      uses: peter-evans/create-pull-request@v6
+      uses: peter-evans/create-pull-request@v7
       with:
         branch: update/conda-lock
         commit-message: Update conda lockfiles [automated]
