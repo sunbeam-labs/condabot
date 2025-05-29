@@ -66,6 +66,7 @@ runs:
 
     - name: Run tests
       id: run-tests
+      if: steps.create-pr.outputs.pull-request-number != ''
       shell: bash
       run: |
         git clone --depth 1 --branch ${{ inputs.sunbeam-version }} https://github.com/sunbeam-labs/sunbeam.git sunbeam_test
@@ -73,7 +74,7 @@ runs:
         pytest -vvvv -l --tb=long ${{ inputs.test-path }}
       
     - name: Generate test summary
-      if: always()
+      if: steps.create-pr.outputs.pull-request-number != '' && always()
       shell: bash
       run: |
         result="${{ steps.run-tests.outcome }}"
@@ -85,11 +86,11 @@ runs:
         
         echo "### ${icon} Test Results for PR #${{ steps.create-pr.outputs.pull-request-number }}" >> comment.md
         echo "- Workflow: \`tests.yml\`" >> comment.md
-        echo "- Status: ${{ steps.run-tests.result }}" >> comment.md
+        echo "- Status: $result" >> comment.md
         echo "- Run: [View Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> comment.md
 
     - name: Comment on PR
-      if: always()
+      if: steps.create-pr.outputs.pull-request-number != '' && always()
       uses: peter-evans/create-or-update-comment@v4
       with:
         issue-number: ${{ steps.create-pr.outputs.pull-request-number }}
