@@ -5,6 +5,14 @@ inputs:
     description: "Path to the conda env file dir"
     required: true
     default: "envs/"
+  test-path:
+    description: "Path to the test directory"
+    required: false
+    default: ".tests/"
+  sunbeam-version:
+    description: "Sunbeam version to use for tests"
+    required: false
+    default: "main"
 
 outputs:
   pr-number:
@@ -58,8 +66,12 @@ runs:
 
     - name: Run tests
       id: run-tests
-      uses: sunbeam-labs/sbx_test_action@v1
-      continue-on-error: true
+      shell: bash
+      run: |
+        git clone --depth 1 --branch ${{ inputs.sunbeam-version }} https://github.com/sunbeam-labs/sunbeam.git sunbeam
+        cd sunbeam
+        pip install -e .[dev]
+        pytest -vvvv -l --tb=long ${{ inputs.test-path }} 
       
     - name: Generate test summary
       if: always()
