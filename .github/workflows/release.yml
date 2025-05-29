@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # e.g., v1.2.3
+
+permissions:
+  contents: write  # Required for tagging and creating releases
+
+jobs:
+  release:
+    name: Create Release and Major Tag
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version components
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          MAJOR="v${TAG#v}"
+          MAJOR="v${MAJOR%%.*}"
+          echo "version=$TAG" >> "$GITHUB_OUTPUT"
+          echo "major_tag=$MAJOR" >> "$GITHUB_OUTPUT"
+
+      - name: Create release for exact tag
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Release ${{ steps.version.outputs.version }}
+          body: |
+            Official release of version ${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: false
+
+      - name: Force-create/update major tag (e.g., v1)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch --tags
+          git tag -f ${{ steps.version.outputs.major_tag }} ${{ steps.version.outputs.version }}
+          git push origin --force ${{ steps.version.outputs.major_tag }}
+
+      - name: Create release for major tag (e.g., v1)
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.major_tag }}
+          name: Release ${{ steps.version.outputs.major_tag }}
+          body: |
+            This tag points to [${{ steps.version.outputs.version }}](https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.version }}).
+          draft: false
+          prerelease: false
