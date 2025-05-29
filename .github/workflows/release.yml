@@ -20,21 +20,12 @@ jobs:
       - name: Extract version components
         id: version
         run: |
-          TAG="${GITHUB_REF#refs/tags/}"
-          MAJOR="v${TAG#v}"
-          MAJOR="v${MAJOR%%.*}"
-          echo "version=$TAG" >> "$GITHUB_OUTPUT"
+          TAG="${GITHUB_REF#refs/tags/}"      # e.g. v1.2.3
+          VERSION="$TAG"                      # Full version tag
+          MAJOR="v${TAG#v}"                   # Strip first 'v': 1.2.3
+          MAJOR="v${MAJOR%%.*}"               # Take major version only: 1
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "major_tag=$MAJOR" >> "$GITHUB_OUTPUT"
-
-      - name: Create release for exact tag
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ steps.version.outputs.version }}
-          name: Release ${{ steps.version.outputs.version }}
-          body: |
-            Official release of version ${{ steps.version.outputs.version }}
-          draft: false
-          prerelease: false
 
       - name: Force-create/update major tag (e.g., v1)
         run: |
@@ -48,7 +39,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.version.outputs.major_tag }}
-          name: Release ${{ steps.version.outputs.major_tag }}
+          name: ${{ steps.version.outputs.major_tag }}
           body: |
             This tag points to [${{ steps.version.outputs.version }}](https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.version }}).
           draft: false
