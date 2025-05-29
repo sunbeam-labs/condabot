@@ -1,0 +1,2 @@
+# condabot
+Automate dependency upgrades
