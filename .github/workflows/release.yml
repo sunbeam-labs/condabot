@@ -23,8 +23,9 @@ jobs:
         id: version
         run: |
           TAG="${GITHUB_REF#refs/tags/}"      # e.g. v1.2.3
+          TAG="${TAG$refs/heads/}"            # Handle branch instead of tag (TESTING)
           VERSION="$TAG"                      # Full version tag
-          MAJOR="v${TAG#v}"                   # Strip first 'v': 1.2.3
+          MAJOR="${TAG#v}"                    # Strip first 'v': 1.2.3
           MAJOR="v${MAJOR%%.*}"               # Take major version only: 1
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "major_tag=$MAJOR" >> "$GITHUB_OUTPUT"
