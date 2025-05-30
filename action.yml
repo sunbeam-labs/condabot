@@ -26,7 +26,8 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - uses: mamba-org/setup-micromamba@v2
+    - name: Setup micromamba
+      uses: mamba-org/setup-micromamba@v2
       with:
         environment-name: lockenv
         create-args: python=3.11
@@ -73,6 +74,7 @@ runs:
       if: steps.create-pr.outputs.pull-request-number != ''
       shell: bash
       run: |
+        export SUNBEAM_EXTENSIONS=$(dirname "${GITHUB_WORKSPACE}")
         git clone --depth 1 --branch ${{ inputs.sunbeam-version }} https://github.com/sunbeam-labs/sunbeam.git sunbeam_test
         pip install -e sunbeam_test[dev]
         pytest -vvvv -l --tb=long ${{ inputs.test-path }}
