@@ -97,7 +97,7 @@ runs:
 
     - name: Comment on PR
       if: steps.create-pr.outputs.pull-request-number != '' && always()
-      uses: peter-evans/create-or-update-comment@v4
+      uses: peter-evans/create-or-update-comment@v5
       with:
         issue-number: ${{ steps.create-pr.outputs.pull-request-number }}
         body-file: comment.md
